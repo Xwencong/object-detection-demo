@@ -128,9 +128,11 @@ if [ "$all_found" = false ]; then
     else
         tar -xzf "/tmp/$ORT_TGZ" -C /tmp/
         cp /tmp/$ORT_DIR/lib/*.so "$THIRD_PARTY_DIR/"
-        # 主库重命名
+        # 主库重命名/软链接（兼容 libonnxruntime.so 和 libonnxruntime.so.1.24.4 两种命名）
         if [ -f "$THIRD_PARTY_DIR/libonnxruntime.so.1.24.4" ]; then
             mv "$THIRD_PARTY_DIR/libonnxruntime.so.1.24.4" "$THIRD_PARTY_DIR/onnxruntime.so"
+        elif [ -f "$THIRD_PARTY_DIR/libonnxruntime.so" ] && [ ! -e "$THIRD_PARTY_DIR/onnxruntime.so" ]; then
+            ln -s libonnxruntime.so "$THIRD_PARTY_DIR/onnxruntime.so"
         fi
         # 创建软链接
         [ ! -e "$THIRD_PARTY_DIR/onnxruntime_providers_cuda.so" ] && \
