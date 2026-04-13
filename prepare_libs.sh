@@ -115,14 +115,31 @@ done
 
 if [ "$all_found" = false ]; then
     echo ""
-    echo "   请手动下载 ONNX Runtime GPU 1.24.4："
-    echo "   1. 访问：https://github.com/microsoft/onnxruntime/releases/tag/v1.24.4"
-    echo "   2. 下载：onnxruntime-linux-x64-gpu-1.24.4.tgz"
-    echo "   3. 解压后将 lib/ 目录下的 .so 文件复制到 $THIRD_PARTY_DIR/"
-    echo "   4. 将 libonnxruntime.so.1.24.4 重命名为 onnxruntime.so"
-    echo "   5. 创建软链接："
-    echo "      ln -s libonnxruntime_providers_cuda.so $THIRD_PARTY_DIR/onnxruntime_providers_cuda.so"
-    echo "      ln -s libonnxruntime_providers_shared.so $THIRD_PARTY_DIR/onnxruntime_providers_shared.so"
+    echo "   正在自动下载 ONNX Runtime GPU 1.24.4..."
+    ORT_TGZ="onnxruntime-linux-x64-gpu-1.24.4.tgz"
+    ORT_URL="https://github.com/microsoft/onnxruntime/releases/download/v1.24.4/$ORT_TGZ"
+    ORT_DIR="onnxruntime-linux-x64-gpu-1.24.4"
+
+    wget -q --show-progress "$ORT_URL" -O "/tmp/$ORT_TGZ"
+    if [ $? -ne 0 ]; then
+        echo "   ✗ 下载失败，请手动下载："
+        echo "     $ORT_URL"
+        echo "   解压后将 lib/*.so 复制到 $THIRD_PARTY_DIR/"
+    else
+        tar -xzf "/tmp/$ORT_TGZ" -C /tmp/
+        cp /tmp/$ORT_DIR/lib/*.so "$THIRD_PARTY_DIR/"
+        # 主库重命名
+        if [ -f "$THIRD_PARTY_DIR/libonnxruntime.so.1.24.4" ]; then
+            mv "$THIRD_PARTY_DIR/libonnxruntime.so.1.24.4" "$THIRD_PARTY_DIR/onnxruntime.so"
+        fi
+        # 创建软链接
+        [ ! -e "$THIRD_PARTY_DIR/onnxruntime_providers_cuda.so" ] && \
+            ln -s libonnxruntime_providers_cuda.so "$THIRD_PARTY_DIR/onnxruntime_providers_cuda.so"
+        [ ! -e "$THIRD_PARTY_DIR/onnxruntime_providers_shared.so" ] && \
+            ln -s libonnxruntime_providers_shared.so "$THIRD_PARTY_DIR/onnxruntime_providers_shared.so"
+        rm -rf "/tmp/$ORT_TGZ" "/tmp/$ORT_DIR"
+        echo "   ✓ ONNX Runtime 库部署完成"
+    fi
 fi
 
 echo ""
