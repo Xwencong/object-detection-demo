@@ -2,30 +2,19 @@
 
 # 准备 Linux 库文件脚本
 #
-# 所需依赖版本：
-#   CUDA        12.8
-#   cuDNN       9.2.0
-#   ONNX Runtime GPU  1.19.2
-#
-# 所需库文件列表：
-#   CUDA 12：
-#     libcublas.so.12, libcublasLt.so.12, libcudart.so.12, libcufft.so.11
-#   cuDNN 9：
-#     libcudnn.so.9, libcudnn_adv.so.9, libcudnn_cnn.so.9,
-#     libcudnn_engines_precompiled.so.9, libcudnn_engines_runtime_compiled.so.9,
-#     libcudnn_graph.so.9, libcudnn_heuristic.so.9, libcudnn_ops.so.9
-#   ONNX Runtime GPU 1.19.2：
-#     onnxruntime.so (即 libonnxruntime.so.1.19.2)
-#     libonnxruntime_providers_cuda.so
-#     libonnxruntime_providers_shared.so
-#     libonnxruntime_providers_tensorrt.so
-#     onnxruntime_providers_cuda.so (软链接 -> libonnxruntime_providers_cuda.so)
-#     onnxruntime_providers_shared.so (软链接 -> libonnxruntime_providers_shared.so)
+# 所需依赖版本（版本必须严格匹配，否则会导致 ORT 初始化失败）：
+#   CUDA              12.8
+#   cuDNN             9.2.0
+#   TensorRT          10.16.0
+#   ONNX Runtime GPU  1.24.4
 #
 # ONNX Runtime 下载地址：
-#   https://github.com/microsoft/onnxruntime/releases/tag/v1.19.2
-#   下载：onnxruntime-linux-x64-gpu-1.19.2.tgz
-#   解压后将 lib/ 目录下的 .so 文件复制到 third_party/
+#   https://github.com/microsoft/onnxruntime/releases/download/v1.24.4/onnxruntime-linux-x64-gpu-1.24.4.tgz
+#   解压后执行：
+#     cp onnxruntime-linux-x64-gpu-1.24.4/lib/*.so third_party/
+#     mv third_party/libonnxruntime.so.1.24.4 third_party/onnxruntime.so
+#     ln -s libonnxruntime_providers_cuda.so third_party/onnxruntime_providers_cuda.so
+#     ln -s libonnxruntime_providers_shared.so third_party/onnxruntime_providers_shared.so
 
 echo "=== 准备 Linux 运行库 ==="
 echo ""

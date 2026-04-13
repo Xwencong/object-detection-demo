@@ -4,7 +4,7 @@
 
 ## 依赖库说明
 
-`third_party/` 目录包含 CUDA/cuDNN/ONNX Runtime 等大型共享库（总计约 2GB），由于 GitHub 文件大小限制，**这些文件未包含在本仓库中**，需手动准备。
+`third_party/` 目录包含 CUDA/cuDNN/ONNX Runtime 等大型共享库（总计约 2.4GB），由于 GitHub 文件大小限制，**这些文件未包含在本仓库中**，需手动准备。
 
 ### 依赖版本
 
@@ -12,37 +12,69 @@
 |------|------|
 | CUDA | 12.8 |
 | cuDNN | 9.2.0 |
-| ONNX Runtime GPU | 1.19.2 |
+| TensorRT | 10.16.0 |
+| ONNX Runtime GPU | 1.24.4 |
+
+> 注意：以上版本必须严格匹配，版本不一致会导致 `ORT 初始化失败` 错误。
 
 ### 所需库文件清单
 
-**CUDA 12（从 `/usr/local/cuda/lib64/` 复制）：**
-- `libcublas.so.12`
-- `libcublasLt.so.12`
-- `libcudart.so.12`
-- `libcufft.so.11`
+**CUDA 12（共 4 个文件，从 `/usr/local/cuda/lib64/` 复制）：**
 
-**cuDNN 9（从 `/usr/local/cuda/lib64/` 或 `/usr/lib/x86_64-linux-gnu/` 复制）：**
-- `libcudnn.so.9`
-- `libcudnn_adv.so.9`
-- `libcudnn_cnn.so.9`
-- `libcudnn_engines_precompiled.so.9`
-- `libcudnn_engines_runtime_compiled.so.9`
-- `libcudnn_graph.so.9`
-- `libcudnn_heuristic.so.9`
-- `libcudnn_ops.so.9`
+| 文件 | 大小 |
+|------|------|
+| `libcublas.so.12` | 111M |
+| `libcublasLt.so.12` | 717M |
+| `libcudart.so.12` | 712K |
+| `libcufft.so.11` | 266M |
 
-**ONNX Runtime GPU 1.19.2（从 [releases](https://github.com/microsoft/onnxruntime/releases/tag/v1.19.2) 下载 `onnxruntime-linux-x64-gpu-1.19.2.tgz`）：**
-- `onnxruntime.so`（即 `libonnxruntime.so.1.19.2` 重命名）
-- `libonnxruntime_providers_cuda.so`
-- `libonnxruntime_providers_shared.so`
-- `libonnxruntime_providers_tensorrt.so`
-- `onnxruntime_providers_cuda.so` → 软链接指向 `libonnxruntime_providers_cuda.so`
-- `onnxruntime_providers_shared.so` → 软链接指向 `libonnxruntime_providers_shared.so`
+**cuDNN 9（共 8 个文件，从 `/usr/local/cuda/lib64/` 或 `/usr/lib/x86_64-linux-gnu/` 复制）：**
 
-### 自动配置
+| 文件 | 大小 |
+|------|------|
+| `libcudnn.so.9` | 127K |
+| `libcudnn_adv.so.9` | 259M |
+| `libcudnn_cnn.so.9` | 3.6M |
+| `libcudnn_engines_precompiled.so.9` | 492M |
+| `libcudnn_engines_runtime_compiled.so.9` | 29M |
+| `libcudnn_graph.so.9` | 3.6M |
+| `libcudnn_heuristic.so.9` | 57M |
+| `libcudnn_ops.so.9` | 102M |
 
-运行以下脚本自动从本地 CUDA 安装目录复制 CUDA/cuDNN 库（ONNX Runtime 需手动下载）：
+**ONNX Runtime GPU 1.24.4（共 6 个文件）：**
+
+| 文件 | 大小 | 说明 |
+|------|------|------|
+| `onnxruntime.so` | 25M | 主库，即 `libonnxruntime.so.1.24.4` 重命名 |
+| `libonnxruntime_providers_cuda.so` | 302M | CUDA 推理后端 |
+| `libonnxruntime_providers_shared.so` | 15K | 共享库 |
+| `libonnxruntime_providers_tensorrt.so` | 835K | TensorRT 推理后端 |
+| `onnxruntime_providers_cuda.so` | — | 软链接 → `libonnxruntime_providers_cuda.so` |
+| `onnxruntime_providers_shared.so` | — | 软链接 → `libonnxruntime_providers_shared.so` |
+
+### 获取 ONNX Runtime 库
+
+1. 下载 ONNX Runtime GPU 1.24.4：
+   ```bash
+   wget https://github.com/microsoft/onnxruntime/releases/download/v1.24.4/onnxruntime-linux-x64-gpu-1.24.4.tgz
+   tar -xzf onnxruntime-linux-x64-gpu-1.24.4.tgz
+   ```
+
+2. 复制库文件到 `third_party/`：
+   ```bash
+   cp onnxruntime-linux-x64-gpu-1.24.4/lib/*.so third_party/
+   ```
+
+3. 重命名主库并创建软链接：
+   ```bash
+   mv third_party/libonnxruntime.so.1.24.4 third_party/onnxruntime.so
+   ln -s libonnxruntime_providers_cuda.so third_party/onnxruntime_providers_cuda.so
+   ln -s libonnxruntime_providers_shared.so third_party/onnxruntime_providers_shared.so
+   ```
+
+### 获取 CUDA / cuDNN 库
+
+运行以下脚本从本地 CUDA 安装目录自动复制：
 
 ```bash
 ./prepare_libs.sh
