@@ -115,11 +115,11 @@ done
 
 if [ "$all_found" = false ]; then
     echo ""
-    echo "   请手动下载 ONNX Runtime GPU 1.19.2："
-    echo "   1. 访问：https://github.com/microsoft/onnxruntime/releases/tag/v1.19.2"
-    echo "   2. 下载：onnxruntime-linux-x64-gpu-1.19.2.tgz"
+    echo "   请手动下载 ONNX Runtime GPU 1.24.4："
+    echo "   1. 访问：https://github.com/microsoft/onnxruntime/releases/tag/v1.24.4"
+    echo "   2. 下载：onnxruntime-linux-x64-gpu-1.24.4.tgz"
     echo "   3. 解压后将 lib/ 目录下的 .so 文件复制到 $THIRD_PARTY_DIR/"
-    echo "   4. 将 libonnxruntime.so.1.19.2 重命名为 onnxruntime.so"
+    echo "   4. 将 libonnxruntime.so.1.24.4 重命名为 onnxruntime.so"
     echo "   5. 创建软链接："
     echo "      ln -s libonnxruntime_providers_cuda.so $THIRD_PARTY_DIR/onnxruntime_providers_cuda.so"
     echo "      ln -s libonnxruntime_providers_shared.so $THIRD_PARTY_DIR/onnxruntime_providers_shared.so"
