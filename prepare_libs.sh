@@ -1,6 +1,31 @@
 #!/bin/bash
 
 # 准备 Linux 库文件脚本
+#
+# 所需依赖版本：
+#   CUDA        12.8
+#   cuDNN       9.2.0
+#   ONNX Runtime GPU  1.19.2
+#
+# 所需库文件列表：
+#   CUDA 12：
+#     libcublas.so.12, libcublasLt.so.12, libcudart.so.12, libcufft.so.11
+#   cuDNN 9：
+#     libcudnn.so.9, libcudnn_adv.so.9, libcudnn_cnn.so.9,
+#     libcudnn_engines_precompiled.so.9, libcudnn_engines_runtime_compiled.so.9,
+#     libcudnn_graph.so.9, libcudnn_heuristic.so.9, libcudnn_ops.so.9
+#   ONNX Runtime GPU 1.19.2：
+#     onnxruntime.so (即 libonnxruntime.so.1.19.2)
+#     libonnxruntime_providers_cuda.so
+#     libonnxruntime_providers_shared.so
+#     libonnxruntime_providers_tensorrt.so
+#     onnxruntime_providers_cuda.so (软链接 -> libonnxruntime_providers_cuda.so)
+#     onnxruntime_providers_shared.so (软链接 -> libonnxruntime_providers_shared.so)
+#
+# ONNX Runtime 下载地址：
+#   https://github.com/microsoft/onnxruntime/releases/tag/v1.19.2
+#   下载：onnxruntime-linux-x64-gpu-1.19.2.tgz
+#   解压后将 lib/ 目录下的 .so 文件复制到 third_party/
 
 echo "=== 准备 Linux 运行库 ==="
 echo ""
@@ -82,16 +107,33 @@ done
 echo ""
 echo "3. 检查 ONNX Runtime 库..."
 
-# 检查是否已有 onnxruntime.so
-if [ ! -f "$THIRD_PARTY_DIR/onnxruntime.so" ]; then
-    echo "   ✗ onnxruntime.so 未找到"
+ORT_LIBS=(
+    "onnxruntime.so"
+    "libonnxruntime_providers_cuda.so"
+    "libonnxruntime_providers_shared.so"
+    "libonnxruntime_providers_tensorrt.so"
+)
+
+all_found=true
+for lib in "${ORT_LIBS[@]}"; do
+    if [ -f "$THIRD_PARTY_DIR/$lib" ]; then
+        echo "   ✓ $lib 已存在"
+    else
+        echo "   ✗ $lib 未找到"
+        all_found=false
+    fi
+done
+
+if [ "$all_found" = false ]; then
     echo ""
-    echo "   请手动下载 ONNX Runtime GPU 版本："
-    echo "   1. 访问：https://github.com/microsoft/onnxruntime/releases"
-    echo "   2. 下载：onnxruntime-linux-x64-gpu-*.tgz"
-    echo "   3. 解压并复制 lib/*.so 到 $THIRD_PARTY_DIR/"
-else
-    echo "   ✓ onnxruntime.so 已存在"
+    echo "   请手动下载 ONNX Runtime GPU 1.19.2："
+    echo "   1. 访问：https://github.com/microsoft/onnxruntime/releases/tag/v1.19.2"
+    echo "   2. 下载：onnxruntime-linux-x64-gpu-1.19.2.tgz"
+    echo "   3. 解压后将 lib/ 目录下的 .so 文件复制到 $THIRD_PARTY_DIR/"
+    echo "   4. 将 libonnxruntime.so.1.19.2 重命名为 onnxruntime.so"
+    echo "   5. 创建软链接："
+    echo "      ln -s libonnxruntime_providers_cuda.so $THIRD_PARTY_DIR/onnxruntime_providers_cuda.so"
+    echo "      ln -s libonnxruntime_providers_shared.so $THIRD_PARTY_DIR/onnxruntime_providers_shared.so"
 fi
 
 echo ""
