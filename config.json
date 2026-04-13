@@ -1,0 +1,7 @@
+{
+  "input":   "./data/GF2_PMS1_E118.6_N37.4_20160826_L1A0001792619-MSS1-fusion.dat",
+  "output":  "./output_yolov8s_finetune_best/output.jpg",
+  "classes": "",
+  "labels":  false,
+  "verbose": false
+}
