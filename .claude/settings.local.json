@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(go build:*)",
-      "Bash(egrep -m 40 '1\\\\.[0-9]+\\\\.[0-9]+|CUDA|TensorRT|onnxruntime')"
-    ]
-  }
-}

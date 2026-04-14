@@ -26,3 +26,7 @@ third_party/
 
 # Data files
 data/
+
+# IDE / 工具配置（本地专用，不入库）
+.claude/
+.vscode/

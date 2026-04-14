@@ -95,9 +95,9 @@ git clone https://github.com/PCL-Satellite-Cloud-Native/Object-Detection.git
 cd Object-Detection
 ./prepare_libs.sh
 go get
-go build -o yolov8gpu-linux .
+go build -o yolov8s .
 export LD_LIBRARY_PATH=$(pwd)/third_party:$LD_LIBRARY_PATH
-./yolov8gpu-linux -classes "0,1,5" -labels \
+./yolov8s -classes "0,1,5" -labels \
   -input ./data/GF2_PMS1_E118.6_N37.4_20160826_L1A0001792619-MSS1-fusion.dat \
   -output ./output_yolov8s_finetune_best_class/output.jpg
 ```
@@ -142,9 +142,9 @@ git clone https://github.com/PCL-Satellite-Cloud-Native/Object-Detection.git
 cd Object-Detection
 # 配置依赖库（见上方）
 go get
-go build -o yolov8gpu-linux .
+go build -o yolov8s .
 export LD_LIBRARY_PATH=$(pwd)/third_party:$LD_LIBRARY_PATH
-./yolov8gpu-linux -cpu -classes "0,1,5" -labels \
+./yolov8s -cpu -classes "0,1,5" -labels \
   -input ./data/GF2_PMS1_E118.6_N37.4_20160826_L1A0001792619-MSS1-fusion.dat \
   -output ./output_yolov8s_finetune_best_class/output.jpg
 ```
