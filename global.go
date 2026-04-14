@@ -6,6 +6,7 @@ var (
 	UseCoreML         = false
 	UseGPU            = true  // 启用 CUDA GPU 推理
 	UseTensorRT       = true  // 启用 TensorRT 推理
+	UseCPU            = false // 启用 CPU 推理（关闭 GPU/TensorRT）
 	BatchSize         = 8     // 批量推理大小
 	SaveWorkers       = 4     // 异步保存 worker 数量
 	DrawLabels        = false // 性能模式默认关闭标签绘制

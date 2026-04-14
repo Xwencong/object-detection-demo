@@ -76,7 +76,17 @@ func main() {
 	flag.StringVar(&OutputImagePath, "output", OutputImagePath, "输出目录/文件路径")
 	flag.BoolVar(&DrawLabels, "labels", DrawLabels, "是否在检测框上绘制标签")
 	flag.BoolVar(&VerboseDetections, "verbose", VerboseDetections, "是否输出逐框日志")
+	flag.BoolVar(&UseCPU, "cpu", UseCPU, "使用 CPU 推理（禁用 GPU/TensorRT，无需 CUDA 环境）")
 	flag.Parse()
+
+	// CPU 模式下关闭 GPU 和 TensorRT
+	if UseCPU {
+		UseGPU = false
+		UseTensorRT = false
+		fmt.Println("推理模式: CPU（注意：CPU 推理速度较慢，适合无 GPU 环境）")
+	} else {
+		fmt.Println("推理模式: GPU (TensorRT)")
+	}
 
 	// 解析类别过滤
 	if *classesFlag != "" {

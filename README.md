@@ -124,3 +124,10 @@ export LD_LIBRARY_PATH=$(pwd)/third_party:$LD_LIBRARY_PATH
 - `-labels` — 在输出图像上绘制类别标签（可选）
 - `-input` — 输入图像或遥感数据文件路径
 - `-output` — 检测结果输出图像路径
+- `-cpu` — 使用 CPU 推理，禁用 GPU/TensorRT（适合无 GPU 环境，速度较慢）
+
+CPU 模式示例：
+
+```bash
+./yolov8gpu-linux -cpu -classes "0,1,5" -labels -input ./data/xxx.dat -output ./output/output.jpg
+```
