@@ -42,6 +42,65 @@ func loadConfig(path string) Config {
 	return cfg
 }
 
+// loadEnv 解析 .env 文件，将键值对写入全局变量。
+// 优先级低于 config.json 和命令行参数。
+func loadEnv(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return // 文件不存在时静默跳过
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		idx := strings.IndexByte(line, '=')
+		if idx < 0 {
+			continue
+		}
+		key := strings.TrimSpace(line[:idx])
+		val := strings.TrimSpace(line[idx+1:])
+		// 去掉行内注释
+		if ci := strings.Index(val, " #"); ci >= 0 {
+			val = strings.TrimSpace(val[:ci])
+		}
+		switch key {
+		case "USE_CPU":
+			UseCPU = val == "true"
+		case "MODEL_PATH":
+			if val != "" {
+				ModelPath = val
+			}
+		case "INPUT_IMAGE_PATH":
+			if val != "" {
+				InputImagePath = val
+			}
+		case "OUTPUT_IMAGE_PATH":
+			if val != "" {
+				OutputImagePath = val
+			}
+		case "BATCH_SIZE":
+			if n, err := strconv.Atoi(val); err == nil && n > 0 {
+				BatchSize = n
+			}
+		case "SAVE_WORKERS":
+			if n, err := strconv.Atoi(val); err == nil && n > 0 {
+				SaveWorkers = n
+			}
+		case "DRAW_LABELS":
+			DrawLabels = val == "true"
+		case "VERBOSE_DETECTIONS":
+			VerboseDetections = val == "true"
+		case "JPEG_QUALITY":
+			if n, err := strconv.Atoi(val); err == nil && n > 0 {
+				JPEGQuality = n
+			}
+		case "CLASSES":
+			EnvClasses = val
+		}
+	}
+}
+
 const tileSize = 640
 const tileStride = 576
 
@@ -55,7 +114,8 @@ type SaveTask struct {
 }
 
 func main() {
-	// 先加载配置文件（命令行参数可覆盖）
+	// 加载顺序：.env < config.json < 命令行参数
+	loadEnv("./config.env")
 	cfg := loadConfig("./config.json")
 	if cfg.Input != "" {
 		InputImagePath = cfg.Input
@@ -70,8 +130,13 @@ func main() {
 		VerboseDetections = *cfg.Verbose
 	}
 
-	// 命令行参数（优先级高于配置文件）
-	classesFlag := flag.String("classes", cfg.Classes, "要检测的类别，逗号分隔，可用 ID 或名称，例如: 0,1 或 oil,bridge。留空表示检测全部类别。")
+	// 命令行参数（优先级最高）
+	// classes 默认值：config.json > .env
+	classesDefault := EnvClasses
+	if cfg.Classes != "" {
+		classesDefault = cfg.Classes
+	}
+	classesFlag := flag.String("classes", classesDefault, "要检测的类别，逗号分隔，可用 ID 或名称，例如: 0,1 或 oil,bridge。留空表示检测全部类别。")
 	flag.StringVar(&InputImagePath, "input", InputImagePath, "输入 .dat 文件路径")
 	flag.StringVar(&OutputImagePath, "output", OutputImagePath, "输出目录/文件路径")
 	flag.BoolVar(&DrawLabels, "labels", DrawLabels, "是否在检测框上绘制标签")

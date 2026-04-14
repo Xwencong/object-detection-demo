@@ -19,6 +19,8 @@ var (
 	Yolo8Model        ModelSession
 	// EnabledClasses 为 nil 时检测全部类别；否则只保留指定类别 ID。
 	EnabledClasses map[int]struct{}
+	// EnvClasses 存储从 .env 读取的 CLASSES 值，供 main 解析。
+	EnvClasses string
 )
 
 type ModelSession struct {
