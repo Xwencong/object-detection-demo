@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 
 	ort "github.com/yalue/onnxruntime_go"
-	"runtime"
 )
 
 func InitOrtEnv() error {
