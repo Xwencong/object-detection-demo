@@ -20,6 +20,9 @@
 # Go workspace file
 go.work
 
+# 编译产物
+yolov8gpu-linux
+
 # Third-party libraries (CUDA/cuDNN/ONNX Runtime .so files, too large for git)
 # Run ./prepare_libs.sh to set up these dependencies locally
 third_party/
