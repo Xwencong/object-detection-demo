@@ -1,0 +1,1258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>遥感影像目标检测任务</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071116;
+      --panel: #0f1c24;
+      --panel-alt: #132733;
+      --line: #244352;
+      --text: #edf4f8;
+      --muted: #90aab8;
+      --accent: #30d7b7;
+      --accent-soft: rgba(48, 215, 183, 0.16);
+      --danger: #ff7e74;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(48, 215, 183, 0.08), transparent 26%),
+        radial-gradient(circle at top right, rgba(255, 190, 92, 0.08), transparent 22%),
+        var(--bg);
+      color: var(--text);
+      font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto auto minmax(320px, 360px) 1fr;
+      gap: 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(15, 28, 36, 0.9);
+    }
+
+    .toolbar h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    .toolbar p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel-alt);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .status.running {
+      color: var(--accent);
+      border-color: rgba(48, 215, 183, 0.35);
+      background: var(--accent-soft);
+    }
+
+    .status.error {
+      color: var(--danger);
+      border-color: rgba(255, 126, 116, 0.35);
+      background: rgba(255, 126, 116, 0.12);
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #30d7b7, #2d9ec8);
+      color: #031318;
+      font: inherit;
+      font-weight: 700;
+      padding: 10px 14px;
+      cursor: pointer;
+      min-width: 116px;
+    }
+
+    button[disabled] {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      border: 1px solid rgba(36, 67, 82, 0.9);
+      border-radius: 8px;
+      background: rgba(7, 17, 22, 0.5);
+      color: var(--text);
+      padding: 9px 10px;
+      font: inherit;
+    }
+
+    input[type="checkbox"] {
+      accent-color: var(--accent);
+    }
+
+    .panel {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(15, 28, 36, 0.9);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .panel-head .meta {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .config-shell {
+      padding: 14px 16px 16px;
+      min-height: 0;
+      display: grid;
+      gap: 12px;
+      overflow: auto;
+    }
+
+    .process-panel {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(380px, 0.85fr) minmax(460px, 1.15fr);
+      gap: 0;
+    }
+
+    .process-col {
+      min-width: 0;
+      min-height: 0;
+      padding: 14px 16px;
+      border-right: 1px solid rgba(36, 67, 82, 0.76);
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .process-col.summary-col {
+      grid-template-rows: auto 1fr;
+    }
+
+    .process-col.log-col {
+      grid-template-rows: auto 1fr;
+    }
+
+    .process-col:last-child {
+      border-right: 0;
+    }
+
+    .config-form {
+      min-height: 0;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .class-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .class-option,
+    .toggle-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(19, 39, 51, 0.74);
+      border: 1px solid rgba(36, 67, 82, 0.82);
+    }
+
+    .toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(19, 39, 51, 0.9);
+      border: 1px solid rgba(36, 67, 82, 0.9);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric .value {
+      margin-top: 6px;
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    .command-box,
+    .summary-board,
+    .logs {
+      min-height: 0;
+      border-radius: 8px;
+      border: 1px solid rgba(36, 67, 82, 0.9);
+      background: rgba(19, 39, 51, 0.84);
+    }
+
+    .command-box {
+      padding: 10px 12px;
+      color: #cfe0e8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      overflow: auto;
+      white-space: nowrap;
+    }
+
+    .summary-board {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      overflow: auto;
+      min-height: 180px;
+    }
+
+    .summary-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+    }
+
+    .summary-head strong,
+    .process-title {
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .summary-stat,
+    .class-row,
+    .top-row {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(7, 17, 22, 0.42);
+      border: 1px solid rgba(36, 67, 82, 0.7);
+    }
+
+    .summary-stat .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .summary-stat .value {
+      margin-top: 6px;
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    .summary-split {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+      gap: 12px;
+    }
+
+    .summary-block {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .summary-block h3 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .class-list,
+    .top-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .class-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+    }
+
+    .class-row .count {
+      font-weight: 650;
+      color: #c8f7ec;
+      white-space: nowrap;
+    }
+
+    .top-row {
+      display: grid;
+      gap: 4px;
+    }
+
+    .top-row .top-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 650;
+    }
+
+    .top-row .coord {
+      color: var(--muted);
+      font-size: 12px;
+      word-break: break-word;
+    }
+
+    .logs {
+      padding: 12px 16px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .log-line {
+      display: grid;
+      grid-template-columns: 66px 54px 1fr;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(36, 67, 82, 0.35);
+    }
+
+    .log-source {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .content-layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.72fr) minmax(520px, 1.28fr);
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .viewer-shell {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .viewer-controls {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      border-bottom: 1px solid rgba(36, 67, 82, 0.76);
+      flex-wrap: wrap;
+    }
+
+    .viewer-controls input[type="range"] {
+      width: 180px;
+      accent-color: var(--accent);
+    }
+
+    .image-viewport {
+      overflow: auto;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background:
+        linear-gradient(90deg, rgba(19, 39, 51, 0.8) 1px, transparent 1px),
+        linear-gradient(rgba(19, 39, 51, 0.8) 1px, transparent 1px),
+        #081017;
+      background-size: 28px 28px;
+    }
+
+    .image-empty {
+      min-height: 260px;
+      width: 100%;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+    }
+
+    .image-stage {
+      position: relative;
+      flex: 0 0 auto;
+      transition: width 120ms ease-out, height 120ms ease-out;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    .image-stage img {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .overlay-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .tile-mark {
+      position: absolute;
+      border: 2px solid rgba(48, 215, 183, 0.96);
+      background: rgba(48, 215, 183, 0.08);
+      box-shadow:
+        0 0 0 1px rgba(7, 17, 22, 0.82),
+        0 0 16px rgba(48, 215, 183, 0.28);
+    }
+
+    .result-shell {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+      overflow: hidden;
+    }
+
+    .result-list {
+      padding: 12px 16px 16px;
+      overflow: auto;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      min-height: 0;
+      border-right: 1px solid rgba(36, 67, 82, 0.76);
+    }
+
+    .result-summary {
+      min-height: 0;
+      padding: 12px 16px 16px;
+      overflow: auto;
+      display: grid;
+      align-content: start;
+    }
+
+    .result-group {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(19, 39, 51, 0.58);
+      border: 1px solid rgba(36, 67, 82, 0.82);
+    }
+
+    .result-group-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+      padding-bottom: 2px;
+      border-bottom: 1px solid rgba(36, 67, 82, 0.55);
+    }
+
+    .result-group-head strong {
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .result-group-grid {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 4px;
+    }
+
+    .result-card {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 8px;
+      min-width: 210px;
+      width: 210px;
+      flex: 0 0 auto;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(19, 39, 51, 0.82);
+      border: 1px solid rgba(36, 67, 82, 0.95);
+    }
+
+    .result-thumb {
+      width: 100%;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: zoom-in;
+    }
+
+    .result-card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #081017;
+    }
+
+    .result-meta {
+      display: grid;
+      gap: 6px;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .result-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 650;
+    }
+
+    .chip {
+      display: inline-flex;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(48, 215, 183, 0.12);
+      border: 1px solid rgba(48, 215, 183, 0.28);
+      color: #bbf8ea;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .empty {
+      padding: 8px 0;
+      color: var(--muted);
+    }
+
+    .image-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background: rgba(3, 10, 14, 0.84);
+      backdrop-filter: blur(6px);
+      z-index: 50;
+    }
+
+    .image-modal.open {
+      display: flex;
+    }
+
+    .image-modal-inner {
+      max-width: min(92vw, 1400px);
+      max-height: 92vh;
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+    }
+
+    .image-modal img {
+      max-width: 100%;
+      max-height: calc(92vh - 56px);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      background: #081017;
+    }
+
+    .image-modal-caption {
+      color: #d8e7ee;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    @media (max-width: 1340px) {
+      .process-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .process-col {
+        border-right: 0;
+        border-bottom: 1px solid rgba(36, 67, 82, 0.76);
+      }
+
+      .process-col:last-child {
+        border-bottom: 0;
+      }
+
+      .app {
+        grid-template-rows: auto auto auto 1fr;
+      }
+    }
+
+    @media (max-width: 1160px) {
+      .content-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .result-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .result-list {
+        border-right: 0;
+        border-bottom: 1px solid rgba(36, 67, 82, 0.76);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .class-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .summary-split,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app { padding: 12px; }
+      .toolbar { flex-direction: column; align-items: flex-start; padding: 12px; }
+      .metrics,
+      .summary-grid { grid-template-columns: 1fr; }
+      .result-card { min-width: 180px; width: 180px; }
+      .class-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="toolbar">
+      <div>
+        <h1>遥感影像目标检测任务</h1>
+        <p id="sourceName">载入中</p>
+      </div>
+      <div class="toolbar-actions">
+        <div class="status" id="statusBadge">待连接</div>
+        <button id="startButton" type="button">执行检测</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>交互配置</h2>
+      </div>
+      <div class="config-shell">
+        <form class="config-form" id="runForm">
+          <div class="form-grid">
+            <div class="field full">
+              <label for="binaryPath">检测程序路径</label>
+              <input id="binaryPath" name="binaryPath" type="text">
+            </div>
+            <div class="field">
+              <label for="inputPath">DAT 输入路径</label>
+              <input id="inputPath" name="inputPath" type="text">
+            </div>
+            <div class="field">
+              <label for="outputPath">输出保存路径</label>
+              <input id="outputPath" name="outputPath" type="text">
+            </div>
+            <div class="field">
+              <label for="inputDatFile">上传 DAT 文件</label>
+              <input id="inputDatFile" name="inputDatFile" type="file" accept=".dat">
+            </div>
+            <div class="field">
+              <label for="inputHdrFile">上传 HDR 文件</label>
+              <input id="inputHdrFile" name="inputHdrFile" type="file" accept=".hdr">
+            </div>
+            <div class="field full">
+              <label>检测类别</label>
+              <div class="class-grid" id="classGrid"></div>
+            </div>
+            <div class="field full">
+              <label>运行选项</label>
+              <div class="toggle-row">
+                <label class="toggle-option"><input id="useCPU" name="useCPU" type="checkbox"> 使用 CPU</label>
+                <label class="toggle-option"><input id="drawLabels" name="labels" type="checkbox"> 绘制标签</label>
+              </div>
+            </div>
+          </div>
+        </form>
+        <div class="command-box" id="commandBox"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>检测进程动态实时展示</h2>
+        <div class="meta" id="timeMeta">-</div>
+      </div>
+      <div class="process-panel">
+        <div class="process-col summary-col">
+          <div class="process-title">运行状态</div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="label">状态</div>
+              <div class="value" id="statusValue">待启动</div>
+            </div>
+            <div class="metric">
+              <div class="label">结果图数</div>
+              <div class="value" id="resultCount">0</div>
+            </div>
+            <div class="metric">
+              <div class="label">命中瓦片</div>
+              <div class="value" id="tileCount">0</div>
+            </div>
+            <div class="metric">
+              <div class="label">已运行</div>
+              <div class="value" id="elapsedValue">0s</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="process-col log-col">
+          <div class="process-title">进程日志</div>
+          <div class="logs" id="logList">
+            <div class="empty">等待执行检测命令。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-layout">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>原始数据可视化</h2>
+          <div class="meta" id="imageMeta">-</div>
+        </div>
+        <div class="viewer-shell">
+          <div class="viewer-controls">
+            <span>显示缩放</span>
+            <input id="zoomRange" type="range" min="100" max="220" step="20" value="100">
+            <span id="zoomValue">18%</span>
+          </div>
+          <div class="image-viewport" id="imageViewport">
+            <div class="image-empty" id="imageEmpty"></div>
+            <div class="image-stage" id="imageStage">
+              <img id="sourceImage" alt="原始遥感图像">
+              <div class="overlay-layer" id="overlayLayer"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>检测目标结果图</h2>
+          <div class="meta" id="outputMeta">-</div>
+        </div>
+        <div class="result-shell">
+          <div class="result-list" id="resultList">
+            <div class="empty">检测结果出现后，这里会实时刷新。</div>
+          </div>
+          <div class="result-summary">
+            <div class="summary-board" id="summaryBoard">
+              <div class="empty">等待 `detections.txt` 生成后解析统计。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <div class="image-modal" id="imageModal" aria-hidden="true">
+    <div class="image-modal-inner">
+      <img id="imageModalImg" alt="放大结果图">
+      <div class="image-modal-caption" id="imageModalCaption"></div>
+    </div>
+  </div>
+
+  <script>
+    const CLASS_OPTIONS = [
+      { id: "0", label: "油罐", en: "oil" },
+      { id: "1", label: "桥梁", en: "bridge" },
+      { id: "2", label: "篮球场", en: "basketball court" },
+      { id: "3", label: "田径场", en: "ground track field" },
+      { id: "4", label: "环形交叉口", en: "roundabout" },
+      { id: "5", label: "码头", en: "harbor" },
+      { id: "6", label: "其他球场", en: "other court" },
+      { id: "7", label: "足球场", en: "soccer ball field" },
+    ];
+
+    const sourceName = document.getElementById("sourceName");
+    const statusBadge = document.getElementById("statusBadge");
+    const startButton = document.getElementById("startButton");
+    const timeMeta = document.getElementById("timeMeta");
+    const imageMeta = document.getElementById("imageMeta");
+    const outputMeta = document.getElementById("outputMeta");
+    const statusValue = document.getElementById("statusValue");
+    const resultCount = document.getElementById("resultCount");
+    const tileCount = document.getElementById("tileCount");
+    const elapsedValue = document.getElementById("elapsedValue");
+    const commandBox = document.getElementById("commandBox");
+    const summaryBoard = document.getElementById("summaryBoard");
+    const logList = document.getElementById("logList");
+    const resultList = document.getElementById("resultList");
+    const sourceImage = document.getElementById("sourceImage");
+    const imageViewport = document.getElementById("imageViewport");
+    const imageEmpty = document.getElementById("imageEmpty");
+    const overlayLayer = document.getElementById("overlayLayer");
+    const imageStage = document.getElementById("imageStage");
+    const zoomRange = document.getElementById("zoomRange");
+    const zoomValue = document.getElementById("zoomValue");
+    const runForm = document.getElementById("runForm");
+    const classGrid = document.getElementById("classGrid");
+    const imageModal = document.getElementById("imageModal");
+    const imageModalImg = document.getElementById("imageModalImg");
+    const imageModalCaption = document.getElementById("imageModalCaption");
+
+    const binaryPath = document.getElementById("binaryPath");
+    const inputPath = document.getElementById("inputPath");
+    const outputPath = document.getElementById("outputPath");
+    const inputDatFile = document.getElementById("inputDatFile");
+    const inputHdrFile = document.getElementById("inputHdrFile");
+    const useCPU = document.getElementById("useCPU");
+    const drawLabels = document.getElementById("drawLabels");
+
+    let currentState;
+    let eventSource;
+    let formDirty = false;
+    let sourceImageRequested = false;
+    let sourceImageLoadTimer = null;
+
+    function renderClassOptions() {
+      classGrid.innerHTML = CLASS_OPTIONS.map(item => `
+        <label class="class-option">
+          <input type="checkbox" name="classes" value="${item.id}">
+          <span>${item.label}</span>
+          <span class="muted">${item.en}</span>
+        </label>
+      `).join("");
+    }
+
+    function setSelectedClasses(values) {
+      const selected = new Set(values || []);
+      runForm.querySelectorAll('input[name="classes"]').forEach(input => {
+        input.checked = selected.has(input.value);
+      });
+    }
+
+    function getSelectedClasses() {
+      return Array.from(runForm.querySelectorAll('input[name="classes"]:checked')).map(input => input.value);
+    }
+
+    function fillConfig(config) {
+      if (formDirty) return;
+      binaryPath.value = config?.binaryPath || "";
+      inputPath.value = config?.inputPath || "";
+      outputPath.value = config?.outputPath || "";
+      useCPU.checked = !!config?.useCPU;
+      drawLabels.checked = !!config?.labels;
+      setSelectedClasses(config?.classes || []);
+    }
+
+    function escapeHTML(text) {
+      return String(text || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function buildCommandPreview() {
+      const parts = [binaryPath.value.trim() || "./yolov8s"];
+      const classes = getSelectedClasses();
+      if (useCPU.checked) parts.push("-cpu");
+      if (classes.length) {
+        parts.push("-classes", classes.join(","));
+      }
+      if (drawLabels.checked) {
+        parts.push("-labels");
+      }
+      if (inputPath.value.trim()) {
+        parts.push("-input", inputPath.value.trim());
+      } else if (inputDatFile.files[0]) {
+        parts.push("-input", `[upload] ${inputDatFile.files[0].name}`);
+      }
+      if (outputPath.value.trim()) {
+        parts.push("-output", outputPath.value.trim());
+      }
+      commandBox.textContent = parts.join(" ");
+    }
+
+    function applyZoom() {
+      if (!sourceImageRequested) return;
+      const imageWidth = currentState?.imageWidth || sourceImage.naturalWidth || 0;
+      const imageHeight = currentState?.imageHeight || sourceImage.naturalHeight || 0;
+      if (!imageWidth || !imageHeight) return;
+
+      const viewportWidth = Math.max(imageViewport.clientWidth - 32, 220);
+      const viewportHeight = Math.max(imageViewport.clientHeight - 32, 220);
+      const baseScale = Math.min(viewportWidth / imageWidth, viewportHeight / imageHeight, 0.12);
+      const scale = Math.max(baseScale * (Number(zoomRange.value) / 100), 0.03);
+
+      imageStage.style.width = `${Math.round(imageWidth * scale)}px`;
+      imageStage.style.height = `${Math.round(imageHeight * scale)}px`;
+      zoomValue.textContent = `${Math.round(scale * 100)}%`;
+    }
+
+    function fmtElapsed(seconds) {
+      return `${seconds || 0}s`;
+    }
+
+    function renderTiles(state) {
+      overlayLayer.innerHTML = "";
+    }
+
+    function loadSourceImage() {
+      sourceImageRequested = true;
+      imageEmpty.style.display = "none";
+      imageStage.style.display = "block";
+      const src = (currentState?.sourceImageURL || "/api/source") + `?t=${Date.now()}`;
+      sourceImage.src = src;
+    }
+
+    function renderSummary(summary) {
+      if (!summary || !summary.available) {
+        summaryBoard.innerHTML = `<div class="empty">等待 \`detections.txt\` 生成后解析统计。</div>`;
+        return;
+      }
+
+      const classRows = (summary.classStats || []).slice(0, 8).map(item => `
+        <div class="class-row">
+          <div>${escapeHTML(item.display)}</div>
+          <div class="count">${item.count}</div>
+        </div>
+      `).join("");
+
+      const topRows = (summary.topDetections || []).map(item => `
+        <div class="top-row">
+          <div class="top-title">
+            <span>#${item.index} ${escapeHTML(item.display)}</span>
+            <span>${item.score.toFixed(4)}</span>
+          </div>
+          <div class="coord">${escapeHTML(item.coord)}</div>
+        </div>
+      `).join("");
+
+      summaryBoard.innerHTML = `
+        <div class="summary-head">
+          <strong>detections.txt 统计</strong>
+          <span class="muted">${escapeHTML(summary.updatedAt || "")}</span>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-stat">
+            <div class="label">目标总数</div>
+            <div class="value">${summary.totalTargets || 0}</div>
+          </div>
+          <div class="summary-stat">
+            <div class="label">类别数量</div>
+            <div class="value">${summary.classCount || 0}</div>
+          </div>
+        </div>
+        <div class="summary-split">
+          <div class="summary-block">
+            <h3>类别分布</h3>
+            <div class="class-list">${classRows || `<div class="empty">暂无类别统计。</div>`}</div>
+          </div>
+          <div class="summary-block">
+            <h3>最高置信度目标</h3>
+            <div class="top-list">${topRows || `<div class="empty">暂无目标记录。</div>`}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLogs(logs) {
+      if (!logs || logs.length === 0) {
+        logList.innerHTML = `<div class="empty">等待执行检测命令。</div>`;
+        return;
+      }
+
+      if (!sourceImageRequested && !sourceImageLoadTimer) {
+        sourceImageLoadTimer = window.setTimeout(() => {
+          loadSourceImage();
+          sourceImageLoadTimer = null;
+        }, 1000);
+      }
+
+      logList.innerHTML = logs.map(log => `
+        <div class="log-line">
+          <div>${escapeHTML(log.at)}</div>
+          <div class="log-source">${escapeHTML(log.source)}</div>
+          <div>${escapeHTML(log.message)}</div>
+        </div>
+      `).join("");
+      logList.scrollTop = logList.scrollHeight;
+    }
+
+    function renderResults(results) {
+      if (!results || results.length === 0) {
+        resultList.innerHTML = `<div class="empty">检测结果出现后，这里会实时刷新。</div>`;
+        return;
+      }
+      const groups = new Map();
+      for (const item of results) {
+        if (!groups.has(item.className)) groups.set(item.className, []);
+        groups.get(item.className).push(item);
+      }
+
+      const sortedNames = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b, "zh-CN"));
+      resultList.innerHTML = sortedNames.map(name => {
+        const items = groups.get(name) || [];
+        const cards = items.map(item => `
+          <article class="result-card">
+            <button class="result-thumb" type="button" data-full-src="${item.imageURL}&t=${encodeURIComponent(item.detectedAt)}" data-caption="${escapeHTML(item.className)} | ${escapeHTML(item.relative)} | ${escapeHTML(item.detectedAt)}">
+              <img src="${item.imageURL}&t=${encodeURIComponent(item.detectedAt)}" alt="检测结果图">
+            </button>
+            <div class="result-meta">
+              <div class="result-title">
+                <span>${escapeHTML(item.className)}</span>
+                <span class="muted">${escapeHTML(item.detectedAt)}</span>
+              </div>
+              <div class="muted">瓦片 (${item.tileX}, ${item.tileY})</div>
+              <div class="chip">${escapeHTML(item.className)}</div>
+              <div class="muted">${escapeHTML(item.relative)}</div>
+            </div>
+          </article>
+        `).join("");
+
+        return `
+          <section class="result-group">
+            <div class="result-group-head">
+              <strong>${escapeHTML(name)}</strong>
+              <span class="muted">${items.length} 张结果图</span>
+            </div>
+            <div class="result-group-grid">${cards}</div>
+          </section>
+        `;
+      }).join("");
+    }
+
+    function applyState(state) {
+      currentState = state;
+      sourceName.textContent = state.sourceImageName || "原始图像";
+      timeMeta.textContent = state.startedAt ? `开始于 ${state.startedAt}` : "未开始";
+      imageMeta.textContent = state.imageWidth && state.imageHeight ? `${state.imageWidth} × ${state.imageHeight}` : "-";
+      outputMeta.textContent = state.outputDir || "-";
+      statusValue.textContent = state.status || "待启动";
+      resultCount.textContent = state.resultCount || 0;
+      tileCount.textContent = state.tileCount || 0;
+      elapsedValue.textContent = fmtElapsed(state.elapsedSeconds);
+
+      if (sourceImageRequested && !sourceImage.src) {
+        sourceImage.src = state.sourceImageURL || "/api/source";
+      }
+
+      statusBadge.textContent = state.error ? `${state.status} / ${state.error}` : (state.status || "待启动");
+      statusBadge.className = "status";
+      if (state.error) {
+        statusBadge.classList.add("error");
+      } else if (state.running) {
+        statusBadge.classList.add("running");
+      }
+
+      startButton.disabled = !!state.running;
+      startButton.textContent = state.running ? "检测运行中" : "执行检测";
+
+      fillConfig(state.config);
+      if (formDirty && !state.running) {
+        buildCommandPreview();
+      } else {
+        commandBox.textContent = state.command || "";
+      }
+      renderTiles(state);
+      renderSummary(state.summary);
+      renderLogs(state.logs || []);
+      renderResults(state.results || []);
+      applyZoom();
+    }
+
+    async function loadState() {
+      const res = await fetch("/api/state", { cache: "no-store" });
+      applyState(await res.json());
+    }
+
+    function connectEvents() {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource("/api/events");
+      eventSource.onmessage = (event) => {
+        const payload = JSON.parse(event.data);
+        if (payload.type === "state") {
+          applyState(payload.state);
+        }
+      };
+      eventSource.onerror = () => {
+        statusBadge.textContent = "连接中断，正在重连";
+        statusBadge.className = "status error";
+        setTimeout(connectEvents, 1500);
+      };
+    }
+
+    async function startRun() {
+      if (sourceImageLoadTimer) {
+        window.clearTimeout(sourceImageLoadTimer);
+        sourceImageLoadTimer = null;
+      }
+
+      const formData = new FormData();
+      formData.set("binaryPath", binaryPath.value.trim());
+      formData.set("inputPath", inputPath.value.trim());
+      formData.set("outputPath", outputPath.value.trim());
+      formData.set("useCPU", useCPU.checked ? "true" : "false");
+      formData.set("labels", drawLabels.checked ? "true" : "false");
+      getSelectedClasses().forEach(value => formData.append("classes", value));
+
+      if (inputDatFile.files[0]) formData.set("inputDatFile", inputDatFile.files[0]);
+      if (inputHdrFile.files[0]) formData.set("inputHdrFile", inputHdrFile.files[0]);
+
+      const res = await fetch("/api/start", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "启动失败");
+      }
+      formDirty = false;
+    }
+
+    function openImageModal(src, caption) {
+      imageModalImg.src = src;
+      imageModalCaption.textContent = caption || "";
+      imageModal.classList.add("open");
+      imageModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeImageModal() {
+      imageModal.classList.remove("open");
+      imageModal.setAttribute("aria-hidden", "true");
+      imageModalImg.src = "";
+      imageModalCaption.textContent = "";
+    }
+
+    startButton.addEventListener("click", async () => {
+      startButton.disabled = true;
+      try {
+        await startRun();
+      } catch (error) {
+        statusBadge.textContent = error.message;
+        statusBadge.className = "status error";
+        startButton.disabled = false;
+      }
+    });
+
+    resultList.addEventListener("click", (event) => {
+      const button = event.target.closest(".result-thumb");
+      if (!button) return;
+      openImageModal(button.dataset.fullSrc || "", button.dataset.caption || "");
+    });
+
+    imageModal.addEventListener("click", (event) => {
+      if (event.target === imageModal) {
+        closeImageModal();
+      }
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && imageModal.classList.contains("open")) {
+        closeImageModal();
+      }
+    });
+
+    runForm.addEventListener("input", () => {
+      formDirty = true;
+      buildCommandPreview();
+    });
+    runForm.addEventListener("change", () => {
+      formDirty = true;
+      buildCommandPreview();
+    });
+    zoomRange.addEventListener("input", applyZoom);
+    sourceImage.addEventListener("load", applyZoom);
+    window.addEventListener("resize", applyZoom);
+
+    renderClassOptions();
+    buildCommandPreview();
+    imageStage.style.display = "none";
+    loadState();
+    connectEvents();
+  </script>
+</body>
+</html>

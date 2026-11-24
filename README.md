@@ -2,6 +2,16 @@
 
 本项目使用 [Go](https://go.dev) 实现了基于 [YOLOv8 目标检测神经网络](https://ultralytics.com/yolov8) 的遥感图像目标检测推理服务，支持 GPU（TensorRT 加速）和 CPU 两种推理模式。
 
+仓库附带一个 Web 演示页面（`demo/`），可在浏览器中驱动推理程序并实时查看切片检测结果，详见 [demo/README.md](demo/README.md)。启动方式：
+
+```bash
+go build -o yolov8s .
+export LD_LIBRARY_PATH=$(pwd)/third_party:$LD_LIBRARY_PATH
+go run ./demo
+```
+
+默认打开 `http://127.0.0.1:8092`。
+
 ## 测试数据
 
 `data/` 目录包含测试用遥感图像（总计约 3.1GB），由于文件过大**未包含在本仓库中**。
@@ -91,8 +101,8 @@ ln -s libonnxruntime_providers_shared.so third_party/onnxruntime_providers_share
 ### 安装与运行
 
 ```bash
-git clone https://github.com/PCL-Satellite-Cloud-Native/Object-Detection.git
-cd Object-Detection
+git clone https://github.com/Xwencong/object-detection-demo.git
+cd object-detection-demo
 ./prepare_libs.sh
 go get
 go build -o yolov8s .
@@ -138,8 +148,8 @@ ln -s libonnxruntime_providers_shared.so third_party/onnxruntime_providers_share
 ### 安装与运行
 
 ```bash
-git clone https://github.com/PCL-Satellite-Cloud-Native/Object-Detection.git
-cd Object-Detection
+git clone https://github.com/Xwencong/object-detection-demo.git
+cd object-detection-demo
 # 配置依赖库（见上方）
 go get
 go build -o yolov8s .

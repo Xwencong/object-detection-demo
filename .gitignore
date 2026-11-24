@@ -11,6 +11,9 @@
 # Test binary, built with `go test -c`
 *.test
 
+# 本地编译产物（历史二进制名，已被 ./yolov8s 取代）
+object_detector
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
